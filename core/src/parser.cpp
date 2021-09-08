@@ -15,12 +15,25 @@ double Parser::parseExpr() {
 }
 
 double Parser::parseAddition() {
-    double left = parsePrimary();
+    double left = parseMultiply();
     while (current().kind == TokenKind::Plus || current().kind == TokenKind::Minus) {
         bool isPlus = current().kind == TokenKind::Plus;
         advance();
-        double right = parsePrimary();
+        double right = parseMultiply();
         left = isPlus ? left + right : left - right;
+    }
+    return left;
+}
+
+double Parser::parseMultiply() {
+    double left = parsePrimary();
+    while (current().kind == TokenKind::Star || current().kind == TokenKind::Slash) {
+        bool isMul = current().kind == TokenKind::Star;
+        advance();
+        double right = parsePrimary();
+        if (!isMul && right == 0.0)
+            throw std::runtime_error("division by zero");
+        left = isMul ? left * right : left / right;
     }
     return left;
 }

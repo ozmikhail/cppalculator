@@ -13,6 +13,7 @@ private:
 
     double parseExpr();
     double parseAddition();
+    double parseMultiply();
     double parsePrimary();
 
     const Token& current() const;
