@@ -47,12 +47,20 @@ double Parser::parseUnary() {
 }
 
 double Parser::parsePrimary() {
+    if (current().kind == TokenKind::LParen) {
+        advance();
+        double val = parseExpr();
+        if (current().kind != TokenKind::RParen)
+            throw std::runtime_error("expected ')'");
+        advance();
+        return val;
+    }
     if (current().kind == TokenKind::Number) {
         double val = current().value;
         advance();
         return val;
     }
-    throw std::runtime_error("expected a number");
+    throw std::runtime_error("expected a number or '('");
 }
 
 const Token& Parser::current() const { return m_tokens[m_pos]; }
