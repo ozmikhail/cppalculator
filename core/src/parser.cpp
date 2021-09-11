@@ -26,16 +26,24 @@ double Parser::parseAddition() {
 }
 
 double Parser::parseMultiply() {
-    double left = parsePrimary();
+    double left = parseUnary();
     while (current().kind == TokenKind::Star || current().kind == TokenKind::Slash) {
         bool isMul = current().kind == TokenKind::Star;
         advance();
-        double right = parsePrimary();
+        double right = parseUnary();
         if (!isMul && right == 0.0)
             throw std::runtime_error("division by zero");
         left = isMul ? left * right : left / right;
     }
     return left;
+}
+
+double Parser::parseUnary() {
+    if (current().kind == TokenKind::Minus) {
+        advance();
+        return -parseUnary();
+    }
+    return parsePrimary();
 }
 
 double Parser::parsePrimary() {
