@@ -15,6 +15,7 @@ private:
     double parseAddition();
     double parseMultiply();
     double parseUnary();
+    double parsePower();
     double parsePrimary();
 
     const Token& current() const;

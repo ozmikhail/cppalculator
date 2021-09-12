@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include <cmath>
 #include <stdexcept>
 
 Parser::Parser(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
@@ -43,7 +44,18 @@ double Parser::parseUnary() {
         advance();
         return -parseUnary();
     }
-    return parsePrimary();
+    return parsePower();
+}
+
+double Parser::parsePower() {
+    double base = parsePrimary();
+    if (current().kind == TokenKind::Caret) {
+        advance();
+        // recurse into parseUnary (not parsePower) to stay right-associative
+        double exp = parseUnary();
+        return std::pow(base, exp);
+    }
+    return base;
 }
 
 double Parser::parsePrimary() {
