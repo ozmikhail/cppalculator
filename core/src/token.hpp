@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 
 enum class TokenKind {
     Number,
@@ -6,10 +7,12 @@ enum class TokenKind {
     Star, Slash,
     Caret,
     LParen, RParen,
+    Identifier,
     End
 };
 
 struct Token {
     TokenKind kind;
     double value{};
+    std::string name{};
 };
