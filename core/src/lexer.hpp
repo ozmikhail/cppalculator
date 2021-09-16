@@ -14,6 +14,7 @@ private:
 
     Token nextToken();
     Token readNumber();
+    Token readIdentifier();
     void skipWhitespace();
     char current() const;
     char advance();

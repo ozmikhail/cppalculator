@@ -19,6 +19,7 @@ Token Lexer::nextToken() {
     if (atEnd()) return {TokenKind::End};
 
     char c = current();
+    if (std::isalpha(static_cast<unsigned char>(c))) return readIdentifier();
     if (std::isdigit(c) || c == '.') return readNumber();
 
     advance();
@@ -33,6 +34,13 @@ Token Lexer::nextToken() {
         default:
             throw std::runtime_error(std::string("unexpected character: ") + c);
     }
+}
+
+Token Lexer::readIdentifier() {
+    std::size_t start = m_pos;
+    while (!atEnd() && std::isalnum(static_cast<unsigned char>(current())))
+        advance();
+    return {TokenKind::Identifier, 0.0, m_input.substr(start, m_pos - start)};
 }
 
 Token Lexer::readNumber() {
