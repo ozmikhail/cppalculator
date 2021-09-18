@@ -2,7 +2,8 @@
 #include <cmath>
 #include <stdexcept>
 
-Parser::Parser(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
+Parser::Parser(std::vector<Token> tokens, double ans)
+    : m_tokens(std::move(tokens)), m_ans(ans) {}
 
 double Parser::parse() {
     double result = parseExpr();
@@ -71,6 +72,12 @@ double Parser::parsePrimary() {
         double val = current().value;
         advance();
         return val;
+    }
+    if (current().kind == TokenKind::Identifier) {
+        const std::string name = current().name;
+        advance();
+        if (name == "ans") return m_ans;
+        throw std::runtime_error("unknown identifier: " + name);
     }
     throw std::runtime_error("expected a number or '('");
 }
