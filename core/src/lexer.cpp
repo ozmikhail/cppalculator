@@ -19,8 +19,8 @@ Token Lexer::nextToken() {
     if (atEnd()) return {TokenKind::End};
 
     char c = current();
-    if (std::isalpha(static_cast<unsigned char>(c))) return readIdentifier();
     if (std::isdigit(c) || c == '.') return readNumber();
+    if (std::isalpha(c) || c == '_') return readIdent();
 
     advance();
     switch (c) {
@@ -36,13 +36,6 @@ Token Lexer::nextToken() {
     }
 }
 
-Token Lexer::readIdentifier() {
-    std::size_t start = m_pos;
-    while (!atEnd() && std::isalnum(static_cast<unsigned char>(current())))
-        advance();
-    return {TokenKind::Identifier, 0.0, m_input.substr(start, m_pos - start)};
-}
-
 Token Lexer::readNumber() {
     std::size_t start = m_pos;
     bool hasDot = false;
@@ -52,6 +45,16 @@ Token Lexer::readNumber() {
     }
     double val = std::stod(m_input.substr(start, m_pos - start));
     return {TokenKind::Number, val};
+}
+
+Token Lexer::readIdent() {
+    std::size_t start = m_pos;
+    while (!atEnd() && (std::isalnum(current()) || current() == '_'))
+        advance();
+    Token tok;
+    tok.kind = TokenKind::Ident;
+    tok.name = m_input.substr(start, m_pos - start);
+    return tok;
 }
 
 void Lexer::skipWhitespace() {
