@@ -1,9 +1,9 @@
 #include "parser.hpp"
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
-Parser::Parser(std::vector<Token> tokens, double ans)
-    : m_tokens(std::move(tokens)), m_ans(ans) {}
+Parser::Parser(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
 
 double Parser::parse() {
     double result = parseExpr();
@@ -73,10 +73,13 @@ double Parser::parsePrimary() {
         advance();
         return val;
     }
-    if (current().kind == TokenKind::Identifier) {
-        const std::string name = current().name;
+    if (current().kind == TokenKind::Ident) {
+        std::string name = current().name;
         advance();
-        if (name == "ans") return m_ans;
+        if (name == "pi") return std::acos(-1.0);
+        if (name == "e") return std::exp(1.0);
+        if (name == "tau") return 2.0 * std::acos(-1.0);
+        if (name == "inf") return std::numeric_limits<double>::infinity();
         throw std::runtime_error("unknown identifier: " + name);
     }
     throw std::runtime_error("expected a number or '('");
