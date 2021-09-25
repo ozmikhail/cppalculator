@@ -7,6 +7,7 @@ enum class TokenKind {
     Star, Slash,
     Caret,
     LParen, RParen,
+    Comma,
     Ident,
     End
 };
