@@ -80,9 +80,43 @@ double Parser::parsePrimary() {
         if (name == "e") return std::exp(1.0);
         if (name == "tau") return 2.0 * std::acos(-1.0);
         if (name == "inf") return std::numeric_limits<double>::infinity();
-        throw std::runtime_error("unknown identifier: " + name);
+        return parseCall(name);
     }
     throw std::runtime_error("expected a number or '('");
+}
+
+double Parser::parseCall(const std::string& name) {
+    if (current().kind != TokenKind::LParen)
+        throw std::runtime_error("unknown identifier: " + name);
+    advance();
+    double arg = parseExpr();
+    if (current().kind != TokenKind::RParen)
+        throw std::runtime_error("expected ')'");
+    advance();
+    if (name == "sin") return std::sin(arg);
+    if (name == "cos") return std::cos(arg);
+    if (name == "tan") return std::tan(arg);
+    if (name == "asin") return std::asin(arg);
+    if (name == "acos") return std::acos(arg);
+    if (name == "atan") return std::atan(arg);
+    if (name == "sinh") return std::sinh(arg);
+    if (name == "cosh") return std::cosh(arg);
+    if (name == "tanh") return std::tanh(arg);
+    if (name == "sqrt") return std::sqrt(arg);
+    if (name == "cbrt") return std::cbrt(arg);
+    if (name == "exp") return std::exp(arg);
+    if (name == "ln") return std::log(arg);
+    if (name == "log") return std::log10(arg);
+    if (name == "log10") return std::log10(arg);
+    if (name == "log2") return std::log2(arg);
+    if (name == "abs") return std::abs(arg);
+    if (name == "ceil") return std::ceil(arg);
+    if (name == "floor") return std::floor(arg);
+    if (name == "round") return std::round(arg);
+    if (name == "deg") return arg * (180.0 / std::acos(-1.0));
+    if (name == "rad") return arg * (std::acos(-1.0) / 180.0);
+    if (name == "sign") return static_cast<double>((arg > 0.0) - (arg < 0.0));
+    throw std::runtime_error("unknown function: " + name);
 }
 
 const Token& Parser::current() const { return m_tokens[m_pos]; }
