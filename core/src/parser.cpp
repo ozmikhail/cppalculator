@@ -90,6 +90,26 @@ double Parser::parseCall(const std::string& name) {
         throw std::runtime_error("unknown identifier: " + name);
     advance();
     double arg = parseExpr();
+
+    if (current().kind == TokenKind::Comma) {
+        advance();
+        double arg2 = parseExpr();
+        if (current().kind != TokenKind::RParen)
+            throw std::runtime_error("expected ')'");
+        advance();
+        if (name == "min") return std::min(arg, arg2);
+        if (name == "max") return std::max(arg, arg2);
+        if (name == "pow") return std::pow(arg, arg2);
+        if (name == "atan2") return std::atan2(arg, arg2);
+        if (name == "hypot") return std::hypot(arg, arg2);
+        if (name == "log") {
+            if (arg2 <= 0.0 || arg2 == 1.0)
+                throw std::runtime_error("log base must be positive and not 1");
+            return std::log(arg) / std::log(arg2);
+        }
+        throw std::runtime_error("'" + name + "' does not take two arguments");
+    }
+
     if (current().kind != TokenKind::RParen)
         throw std::runtime_error("expected ')'");
     advance();
