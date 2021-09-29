@@ -3,7 +3,8 @@
 #include <limits>
 #include <stdexcept>
 
-Parser::Parser(std::vector<Token> tokens) : m_tokens(std::move(tokens)) {}
+Parser::Parser(std::vector<Token> tokens, double ans)
+    : m_tokens(std::move(tokens)), m_ans(ans) {}
 
 double Parser::parse() {
     double result = parseExpr();
@@ -80,6 +81,7 @@ double Parser::parsePrimary() {
         if (name == "e") return std::exp(1.0);
         if (name == "tau") return 2.0 * std::acos(-1.0);
         if (name == "inf") return std::numeric_limits<double>::infinity();
+        if (name == "ans") return m_ans;
         return parseCall(name);
     }
     throw std::runtime_error("expected a number or '('");
