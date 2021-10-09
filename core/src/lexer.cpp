@@ -32,6 +32,7 @@ Token Lexer::nextToken() {
         case '(': return {TokenKind::LParen};
         case ')': return {TokenKind::RParen};
         case ',': return {TokenKind::Comma};
+        case '=': return {TokenKind::Assign};
         default:
             throw std::runtime_error(std::string("unexpected character: ") + c);
     }

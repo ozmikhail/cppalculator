@@ -8,6 +8,7 @@ enum class TokenKind {
     Caret,
     LParen, RParen,
     Comma,
+    Assign,
     Ident,
     End
 };
