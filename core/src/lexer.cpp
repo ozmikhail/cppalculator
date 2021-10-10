@@ -28,6 +28,7 @@ Token Lexer::nextToken() {
         case '-': return {TokenKind::Minus};
         case '*': return {TokenKind::Star};
         case '/': return {TokenKind::Slash};
+        case '%': return {TokenKind::Percent};
         case '^': return {TokenKind::Caret};
         case '(': return {TokenKind::LParen};
         case ')': return {TokenKind::RParen};

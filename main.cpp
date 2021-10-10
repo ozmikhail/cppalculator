@@ -96,7 +96,7 @@ static void printHelp() {
         "  clear              clear expression history\n"
         "  help               show this message\n"
         "  quit / exit        exit\n"
-        "\nOperators:  + - * / ^ ( )\n"
+        "\nOperators:  + - * / % ^ ( )\n"
         "Assignment: name = expression   (e.g. r = 3, area = pi * r^2)\n"
         "  'ans' holds the last result\n"
         "\nFunctions (1-arg):\n"

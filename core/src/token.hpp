@@ -4,7 +4,7 @@
 enum class TokenKind {
     Number,
     Plus, Minus,
-    Star, Slash,
+    Star, Slash, Percent,
     Caret,
     LParen, RParen,
     Comma,

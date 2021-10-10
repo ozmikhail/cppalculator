@@ -46,13 +46,21 @@ double Parser::parseAddition() {
 
 double Parser::parseMultiply() {
     double left = parseUnary();
-    while (current().kind == TokenKind::Star || current().kind == TokenKind::Slash) {
-        bool isMul = current().kind == TokenKind::Star;
+    while (current().kind == TokenKind::Star ||
+           current().kind == TokenKind::Slash ||
+           current().kind == TokenKind::Percent) {
+        TokenKind op = current().kind;
         advance();
         double right = parseUnary();
-        if (!isMul && right == 0.0)
-            throw std::runtime_error("division by zero");
-        left = isMul ? left * right : left / right;
+        if (op != TokenKind::Star && right == 0.0)
+            throw std::runtime_error(op == TokenKind::Slash
+                ? "division by zero" : "modulo by zero");
+        switch (op) {
+            case TokenKind::Star: left = left * right; break;
+            case TokenKind::Slash: left = left / right; break;
+            case TokenKind::Percent: left = std::fmod(left, right); break;
+            default: break;
+        }
     }
     return left;
 }
