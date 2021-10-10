@@ -20,6 +20,7 @@ private:
     double parseMultiply();
     double parseUnary();
     double parsePower();
+    double parsePostfix();
     double parsePrimary();
     double parseCall(const std::string& name);
 

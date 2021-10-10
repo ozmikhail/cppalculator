@@ -6,6 +6,7 @@ enum class TokenKind {
     Plus, Minus,
     Star, Slash, Percent,
     Caret,
+    Bang,
     LParen, RParen,
     Comma,
     Assign,

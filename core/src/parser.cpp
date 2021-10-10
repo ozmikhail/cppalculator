@@ -74,13 +74,27 @@ double Parser::parseUnary() {
 }
 
 double Parser::parsePower() {
-    double base = parsePrimary();
+    double base = parsePostfix();
     if (current().kind == TokenKind::Caret) {
         advance();
         // right-associative: recurse into parseUnary
         return std::pow(base, parseUnary());
     }
     return base;
+}
+
+double Parser::parsePostfix() {
+    double val = parsePrimary();
+    while (current().kind == TokenKind::Bang) {
+        advance();
+        if (!std::isfinite(val) || val < 0.0)
+            throw std::runtime_error("factorial requires a non-negative finite number");
+        if (val > 170.0)
+            throw std::runtime_error("factorial overflow (argument > 170)");
+        // tgamma(n+1) extends factorial to non-integer arguments
+        val = std::tgamma(val + 1.0);
+    }
+    return val;
 }
 
 double Parser::parsePrimary() {

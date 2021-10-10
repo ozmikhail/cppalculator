@@ -30,6 +30,7 @@ Token Lexer::nextToken() {
         case '/': return {TokenKind::Slash};
         case '%': return {TokenKind::Percent};
         case '^': return {TokenKind::Caret};
+        case '!': return {TokenKind::Bang};
         case '(': return {TokenKind::LParen};
         case ')': return {TokenKind::RParen};
         case ',': return {TokenKind::Comma};
