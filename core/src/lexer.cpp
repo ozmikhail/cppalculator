@@ -41,6 +41,28 @@ Token Lexer::nextToken() {
 }
 
 Token Lexer::readNumber() {
+    // 0x..., 0b..., 0o... prefixed integer literals
+    if (current() == '0' && m_pos + 1 < m_input.size()) {
+        char prefix = m_input[m_pos + 1];
+        int base = 0;
+        if (prefix == 'x' || prefix == 'X') base = 16;
+        else if (prefix == 'b' || prefix == 'B') base = 2;
+        else if (prefix == 'o' || prefix == 'O') base = 8;
+        if (base != 0) {
+            m_pos += 2;
+            std::size_t start = m_pos;
+            auto isDigit = [base](char c) {
+                if (base == 16) return static_cast<bool>(std::isxdigit(static_cast<unsigned char>(c)));
+                if (base == 8) return c >= '0' && c <= '7';
+                return c == '0' || c == '1';
+            };
+            while (!atEnd() && isDigit(current())) advance();
+            if (m_pos == start)
+                throw std::runtime_error("invalid numeric literal");
+            std::string digits = m_input.substr(start, m_pos - start);
+            return {TokenKind::Number, static_cast<double>(std::stoll(digits, nullptr, base))};
+        }
+    }
     std::size_t start = m_pos;
     bool hasDot = false;
     while (!atEnd() && (std::isdigit(current()) || (current() == '.' && !hasDot))) {

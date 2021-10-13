@@ -109,7 +109,8 @@ static void printHelp() {
         "\nUnit conversion:  convert(value, from_unit, to_unit)\n"
         "  e.g. convert(5, km, miles)  →  3.10686\n"
         "  Type 'units' to list all unit constants.\n"
-        "\nConstants: pi  e  tau  inf  ans\n\n";
+        "\nConstants: pi  e  tau  inf  ans\n"
+        "\nNumeric literals: decimals (3.14), hex (0xFF), binary (0b1010), octal (0o17)\n\n";
 }
 
 static void printUnits() {
