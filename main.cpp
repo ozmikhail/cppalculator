@@ -17,11 +17,10 @@
 #include <readline/history.h>
 #endif
 
-// ── completion ────────────────────────────────────────────────────────────────
-
 static const std::vector<std::string> COMPLETIONS = {
     // REPL commands
     "quit", "exit", "history", "vars", "units", "unset", "clear", "help",
+    "hex", "bin", "oct",
     // constants
     "pi", "e", "tau", "inf", "ans",
     // 1-arg functions
@@ -73,8 +72,6 @@ static char** completionCb(const char* text, int /*start*/, int /*end*/) {
 }
 #endif
 
-// ── output helpers ────────────────────────────────────────────────────────────
-
 static std::string fmtNum(double v) {
     if (std::isfinite(v) && v == std::floor(v) && std::abs(v) < 1e15) {
         std::ostringstream oss;
@@ -86,6 +83,25 @@ static std::string fmtNum(double v) {
     return oss.str();
 }
 
+static std::string fmtBase(double v, int base) {
+    if (!std::isfinite(v) || v != std::floor(v) || std::abs(v) >= 9.2e18)
+        throw std::runtime_error("base output requires a finite integer in range");
+    auto n = static_cast<long long>(v);
+    std::ostringstream oss;
+    if (n < 0) { oss << '-'; n = -n; }
+    auto u = static_cast<unsigned long long>(n);
+    if (base == 16) oss << "0x" << std::hex << std::uppercase << u;
+    else if (base == 8) oss << "0o" << std::oct << u;
+    else /* base == 2 */ {
+        std::string bits;
+        if (u == 0) bits = "0";
+        else while (u) { bits.push_back('0' + (u & 1)); u >>= 1; }
+        std::reverse(bits.begin(), bits.end());
+        oss << "0b" << bits;
+    }
+    return oss.str();
+}
+
 static void printHelp() {
     std::cout <<
         "\ncppalculator commands:\n"
@@ -93,6 +109,9 @@ static void printHelp() {
         "  vars               list user-defined variables\n"
         "  units              list built-in unit constants\n"
         "  unset <name>       remove a user variable\n"
+        "  hex <expr>         evaluate and print result in hexadecimal\n"
+        "  bin <expr>         evaluate and print result in binary\n"
+        "  oct <expr>         evaluate and print result in octal\n"
         "  clear              clear expression history\n"
         "  help               show this message\n"
         "  quit / exit        exit\n"
@@ -132,8 +151,6 @@ static void printUnits() {
                  "Usage: convert(value, from_unit, to_unit)\n"
                  "  e.g. convert(5, km, miles)   convert(70, lb, kg)\n\n";
 }
-
-// ── REPL ──────────────────────────────────────────────────────────────────────
 
 int main() {
     std::map<std::string, double> vars;
@@ -213,10 +230,19 @@ int main() {
             continue;
         }
 
+        int displayBase = 0;
+        std::string expr = line;
+        if (line.rfind("hex ", 0) == 0) { displayBase = 16; expr = line.substr(4); }
+        else if (line.rfind("bin ", 0) == 0) { displayBase = 2; expr = line.substr(4); }
+        else if (line.rfind("oct ", 0) == 0) { displayBase = 8; expr = line.substr(4); }
+
         try {
-            auto tokens = Lexer(line).tokenize();
+            auto tokens = Lexer(expr).tokenize();
             double result = Parser(std::move(tokens), ans, vars).parse();
-            std::cout << "= " << fmtNum(result) << '\n';
+            std::string formatted = (displayBase != 0)
+                ? fmtBase(result, displayBase)
+                : fmtNum(result);
+            std::cout << "= " << formatted << '\n';
             ans = result;
             history.emplace_back(line, result);
         } catch (const std::exception& ex) {
