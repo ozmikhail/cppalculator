@@ -41,7 +41,6 @@ Token Lexer::nextToken() {
 }
 
 Token Lexer::readNumber() {
-    // 0x..., 0b..., 0o... prefixed integer literals
     if (current() == '0' && m_pos + 1 < m_input.size()) {
         char prefix = m_input[m_pos + 1];
         int base = 0;

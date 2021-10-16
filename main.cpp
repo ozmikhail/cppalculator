@@ -29,8 +29,9 @@ static const std::vector<std::string> COMPLETIONS = {
     "sqrt(", "cbrt(", "exp(", "ln(", "log(", "log10(", "log2(",
     "abs(", "ceil(", "floor(", "round(", "deg(", "rad(", "sign(",
     "c_to_f(", "f_to_c(", "c_to_k(", "k_to_c(", "f_to_k(", "k_to_f(",
-    // 2-arg functions
+    "bnot(",
     "min(", "max(", "pow(", "atan2(", "hypot(",
+    "band(", "bor(", "bxor(", "shl(", "shr(",
     // 3-arg unit conversion
     "convert(",
     // unit constants
@@ -124,7 +125,9 @@ static void printHelp() {
         "  sqrt cbrt exp ln log log10 log2\n"
         "  abs ceil floor round deg rad sign\n"
         "  c_to_f  f_to_c  c_to_k  k_to_c  f_to_k  k_to_f\n"
+        "  bnot(x)  bitwise NOT (integers only)\n"
         "\nFunctions (2-arg):  min(x,y)  max(x,y)  pow(x,y)  atan2(y,x)  hypot(x,y)  log(x,base)\n"
+        "  band(x,y)  bor(x,y)  bxor(x,y)  shl(x,n)  shr(x,n)\n"
         "\nUnit conversion:  convert(value, from_unit, to_unit)\n"
         "  e.g. convert(5, km, miles)  →  3.10686\n"
         "  Type 'units' to list all unit constants.\n"

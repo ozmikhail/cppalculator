@@ -1,11 +1,18 @@
 #include "parser.hpp"
 #include "units.hpp"
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <set>
 #include <stdexcept>
 
 static const std::set<std::string> RESERVED = {"pi", "e", "tau", "inf", "ans"};
+
+static std::int64_t toInt(double v, const char* fn) {
+    if (!std::isfinite(v) || v != std::floor(v) || std::abs(v) >= 9.2e18)
+        throw std::runtime_error(std::string(fn) + ": argument must be a finite integer");
+    return static_cast<std::int64_t>(v);
+}
 
 Parser::Parser(std::vector<Token> tokens, double ans, std::map<std::string, double>& vars)
     : m_tokens(std::move(tokens)), m_ans(ans), m_vars(vars) {}
@@ -91,7 +98,6 @@ double Parser::parsePostfix() {
             throw std::runtime_error("factorial requires a non-negative finite number");
         if (val > 170.0)
             throw std::runtime_error("factorial overflow (argument > 170)");
-        // tgamma(n+1) extends factorial to non-integer arguments
         val = std::tgamma(val + 1.0);
     }
     return val;
@@ -170,6 +176,19 @@ double Parser::parseCall(const std::string& name) {
                 throw std::runtime_error("log base must be positive and not 1");
             return std::log(a) / std::log(b);
         }
+        if (name == "band") return static_cast<double>(toInt(a,"band") & toInt(b,"band"));
+        if (name == "bor") return static_cast<double>(toInt(a,"bor") | toInt(b,"bor"));
+        if (name == "bxor") return static_cast<double>(toInt(a,"bxor") ^ toInt(b,"bxor"));
+        if (name == "shl") {
+            std::int64_t x = toInt(a, "shl"), n = toInt(b, "shl");
+            if (n < 0 || n > 62) throw std::runtime_error("shl: shift out of range [0,62]");
+            return static_cast<double>(x << n);
+        }
+        if (name == "shr") {
+            std::int64_t x = toInt(a, "shr"), n = toInt(b, "shr");
+            if (n < 0 || n > 62) throw std::runtime_error("shr: shift out of range [0,62]");
+            return static_cast<double>(x >> n);
+        }
         throw std::runtime_error("'" + name + "' does not take two arguments");
     }
 
@@ -199,7 +218,7 @@ double Parser::parseCall(const std::string& name) {
     if (name == "deg") return a * (180.0 / std::acos(-1.0));
     if (name == "rad") return a * (std::acos(-1.0) / 180.0);
     if (name == "sign") return static_cast<double>((a > 0.0) - (a < 0.0));
-    // temperature conversion
+    if (name == "bnot") return static_cast<double>(~toInt(a, "bnot"));
     if (name == "c_to_f") return a * 9.0/5.0 + 32.0;
     if (name == "f_to_c") return (a - 32.0) * 5.0/9.0;
     if (name == "c_to_k") return a + 273.15;
