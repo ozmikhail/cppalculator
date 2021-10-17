@@ -51,13 +51,23 @@ double Parser::parseAddition() {
     return left;
 }
 
+static bool startsPrimary(TokenKind k) {
+    return k == TokenKind::Number || k == TokenKind::LParen || k == TokenKind::Ident;
+}
+
 double Parser::parseMultiply() {
     double left = parseUnary();
-    while (current().kind == TokenKind::Star ||
-           current().kind == TokenKind::Slash ||
-           current().kind == TokenKind::Percent) {
-        TokenKind op = current().kind;
-        advance();
+    while (true) {
+        TokenKind k = current().kind;
+        TokenKind op;
+        if (k == TokenKind::Star || k == TokenKind::Slash || k == TokenKind::Percent) {
+            op = k;
+            advance();
+        } else if (startsPrimary(k)) {
+            op = TokenKind::Star;
+        } else {
+            break;
+        }
         double right = parseUnary();
         if (op != TokenKind::Star && right == 0.0)
             throw std::runtime_error(op == TokenKind::Slash
