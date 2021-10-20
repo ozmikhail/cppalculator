@@ -38,6 +38,10 @@ static const std::vector<std::string> COMPLETIONS = {
     "km", "cm", "mm", "ft", "inch", "yd", "miles", "nmi",
     "gram", "mg", "lb", "oz", "tonne",
     "sec", "hr", "day", "week",
+    "sqkm", "sqcm", "sqmm", "sqft", "sqin", "sqyd", "sqmi", "acre", "hectare",
+    "litre", "ml", "cuft", "cuin", "gal", "gal_uk", "pint", "cup", "floz",
+    "kph", "mph", "knot",
+    "KB", "MB", "GB", "TB",
 };
 
 static std::map<std::string, double>* g_vars = nullptr;
@@ -149,6 +153,14 @@ static void printUnits() {
     for (auto n : {"gram","mg","lb","oz","tonne"}) row(n);
     std::cout << "Time (SI base = 1 second):\n";
     for (auto n : {"sec","hr","day","week"}) row(n);
+    std::cout << "Area (SI base = 1 square metre):\n";
+    for (auto n : {"sqkm","sqcm","sqmm","sqft","sqin","sqyd","sqmi","acre","hectare"}) row(n);
+    std::cout << "Volume (SI base = 1 cubic metre):\n";
+    for (auto n : {"litre","ml","cuft","cuin","gal","gal_uk","pint","cup","floz"}) row(n);
+    std::cout << "Speed (SI base = 1 m/s):\n";
+    for (auto n : {"kph","mph","knot"}) row(n);
+    std::cout << "Data (SI base = 1 byte, binary):\n";
+    for (auto n : {"KB","MB","GB","TB"}) row(n);
     std::cout << "Temperature (non-linear — use conversion functions):\n"
                  "  c_to_f(x)  f_to_c(x)  c_to_k(x)  k_to_c(x)  f_to_k(x)  k_to_f(x)\n"
                  "Usage: convert(value, from_unit, to_unit)\n"
