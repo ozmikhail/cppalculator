@@ -22,8 +22,9 @@ private:
     double parsePower();
     double parsePostfix();
     double parsePrimary();
-    double parseCall(const std::string& name);
+    double parseCall(const std::string& name, std::size_t nameCol);
 
     const Token& current() const;
     const Token& advance();
+    [[noreturn]] void errHere(const std::string& msg) const;
 };

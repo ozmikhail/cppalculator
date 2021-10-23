@@ -1,6 +1,5 @@
 #include "lexer.hpp"
 #include <cctype>
-#include <stdexcept>
 
 Lexer::Lexer(std::string input) : m_input(std::move(input)) {}
 
@@ -16,31 +15,41 @@ std::vector<Token> Lexer::tokenize() {
 
 Token Lexer::nextToken() {
     skipWhitespace();
-    if (atEnd()) return {TokenKind::End};
+    std::size_t col = m_pos;
+    if (atEnd()) return {TokenKind::End, 0.0, {}, col};
 
     char c = current();
-    if (std::isdigit(c) || c == '.') return readNumber();
-    if (std::isalpha(c) || c == '_') return readIdent();
+    if (std::isdigit(c) || c == '.') {
+        Token t = readNumber();
+        t.col = col;
+        return t;
+    }
+    if (std::isalpha(c) || c == '_') {
+        Token t = readIdent();
+        t.col = col;
+        return t;
+    }
 
     advance();
     switch (c) {
-        case '+': return {TokenKind::Plus};
-        case '-': return {TokenKind::Minus};
-        case '*': return {TokenKind::Star};
-        case '/': return {TokenKind::Slash};
-        case '%': return {TokenKind::Percent};
-        case '^': return {TokenKind::Caret};
-        case '!': return {TokenKind::Bang};
-        case '(': return {TokenKind::LParen};
-        case ')': return {TokenKind::RParen};
-        case ',': return {TokenKind::Comma};
-        case '=': return {TokenKind::Assign};
+        case '+': return {TokenKind::Plus, 0.0, {}, col};
+        case '-': return {TokenKind::Minus, 0.0, {}, col};
+        case '*': return {TokenKind::Star, 0.0, {}, col};
+        case '/': return {TokenKind::Slash, 0.0, {}, col};
+        case '%': return {TokenKind::Percent, 0.0, {}, col};
+        case '^': return {TokenKind::Caret, 0.0, {}, col};
+        case '!': return {TokenKind::Bang, 0.0, {}, col};
+        case '(': return {TokenKind::LParen, 0.0, {}, col};
+        case ')': return {TokenKind::RParen, 0.0, {}, col};
+        case ',': return {TokenKind::Comma, 0.0, {}, col};
+        case '=': return {TokenKind::Assign, 0.0, {}, col};
         default:
-            throw std::runtime_error(std::string("unexpected character: ") + c);
+            throw CalcError(std::string("unexpected character: ") + c, col);
     }
 }
 
 Token Lexer::readNumber() {
+    std::size_t litStart = m_pos;
     if (current() == '0' && m_pos + 1 < m_input.size()) {
         char prefix = m_input[m_pos + 1];
         int base = 0;
@@ -57,7 +66,7 @@ Token Lexer::readNumber() {
             };
             while (!atEnd() && isDigit(current())) advance();
             if (m_pos == start)
-                throw std::runtime_error("invalid numeric literal");
+                throw CalcError("invalid numeric literal", litStart);
             std::string digits = m_input.substr(start, m_pos - start);
             return {TokenKind::Number, static_cast<double>(std::stoll(digits, nullptr, base))};
         }

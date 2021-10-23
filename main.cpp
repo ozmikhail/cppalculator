@@ -10,6 +10,7 @@
 #include <vector>
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "token.hpp"
 #include "units.hpp"
 
 #ifdef HAVE_READLINE
@@ -246,10 +247,11 @@ int main() {
         }
 
         int displayBase = 0;
+        std::size_t prefixLen = 0;
         std::string expr = line;
-        if (line.rfind("hex ", 0) == 0) { displayBase = 16; expr = line.substr(4); }
-        else if (line.rfind("bin ", 0) == 0) { displayBase = 2; expr = line.substr(4); }
-        else if (line.rfind("oct ", 0) == 0) { displayBase = 8; expr = line.substr(4); }
+        if (line.rfind("hex ", 0) == 0) { displayBase = 16; prefixLen = 4; expr = line.substr(4); }
+        else if (line.rfind("bin ", 0) == 0) { displayBase = 2; prefixLen = 4; expr = line.substr(4); }
+        else if (line.rfind("oct ", 0) == 0) { displayBase = 8; prefixLen = 4; expr = line.substr(4); }
 
         try {
             auto tokens = Lexer(expr).tokenize();
@@ -260,6 +262,9 @@ int main() {
             std::cout << "= " << formatted << '\n';
             ans = result;
             history.emplace_back(line, result);
+        } catch (const CalcError& ex) {
+            std::cerr << "  " << std::string(prefixLen + ex.col(), ' ') << "^\n";
+            std::cerr << "error: " << ex.what() << '\n';
         } catch (const std::exception& ex) {
             std::cerr << "error: " << ex.what() << '\n';
         }
