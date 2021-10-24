@@ -118,6 +118,8 @@ static void printHelp() {
         "  hex <expr>         evaluate and print result in hexadecimal\n"
         "  bin <expr>         evaluate and print result in binary\n"
         "  oct <expr>         evaluate and print result in octal\n"
+        "  !N                 re-evaluate history entry N (1-based)\n"
+        "  !!                 re-evaluate the most recent history entry\n"
         "  clear              clear expression history\n"
         "  help               show this message\n"
         "  quit / exit        exit\n"
@@ -198,6 +200,38 @@ int main() {
 
         if (line.empty()) continue;
         if (line == "quit" || line == "exit") break;
+
+        if (line.size() >= 2 && line[0] == '!' && line != "!") {
+            std::size_t idx = 0;
+            bool valid = false;
+            if (line == "!!") {
+                if (history.empty()) {
+                    std::cerr << "no history yet\n";
+                    continue;
+                }
+                idx = history.size();
+                valid = true;
+            } else {
+                try {
+                    std::size_t consumed = 0;
+                    long n = std::stol(line.substr(1), &consumed);
+                    if (consumed + 1 == line.size() && n >= 1) {
+                        idx = static_cast<std::size_t>(n);
+                        valid = true;
+                    }
+                } catch (...) {}
+            }
+            if (!valid) {
+                std::cerr << "usage: !N or !!  (N is a 1-based history index)\n";
+                continue;
+            }
+            if (idx > history.size()) {
+                std::cerr << "no history entry " << idx << " (have " << history.size() << ")\n";
+                continue;
+            }
+            line = history[idx - 1].first;
+            std::cout << line << '\n';
+        }
 
         if (line == "help") { printHelp(); continue; }
         if (line == "units") { printUnits(); continue; }
