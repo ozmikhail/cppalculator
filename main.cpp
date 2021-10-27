@@ -20,7 +20,7 @@
 
 static const std::vector<std::string> COMPLETIONS = {
     // REPL commands
-    "quit", "exit", "history", "vars", "units", "unset", "clear", "help",
+    "quit", "exit", "history", "vars", "funcs", "units", "unset", "clear", "help",
     "hex", "bin", "oct",
     // constants
     "pi", "e", "tau", "inf", "ans",
@@ -113,6 +113,7 @@ static void printHelp() {
         "\ncppalculator commands:\n"
         "  history            list expression history\n"
         "  vars               list user-defined variables\n"
+        "  funcs              list user-defined functions\n"
         "  units              list built-in unit constants\n"
         "  unset <name>       remove a user variable\n"
         "  hex <expr>         evaluate and print result in hexadecimal\n"
@@ -127,6 +128,8 @@ static void printHelp() {
         "  ! is postfix factorial (e.g. 5! = 120, fractional via gamma)\n"
         "Assignment: name = expression   (e.g. r = 3, area = pi * r^2)\n"
         "  'ans' holds the last result\n"
+        "Function definition: name(p1, p2, ...) = expression\n"
+        "  e.g. f(x) = x^2 + 1     hyp(a, b) = sqrt(a^2 + b^2)\n"
         "\nFunctions (1-arg):\n"
         "  sin cos tan asin acos atan sinh cosh tanh\n"
         "  sqrt cbrt exp ln log log10 log2\n"
@@ -170,8 +173,27 @@ static void printUnits() {
                  "  e.g. convert(5, km, miles)   convert(70, lb, kg)\n\n";
 }
 
+static bool looksLikeFuncDef(const std::vector<Token>& t) {
+    if (t.size() < 6) return false;
+    if (t[0].kind != TokenKind::Ident || t[1].kind != TokenKind::LParen) return false;
+    std::size_t i = 2;
+    if (t[i].kind != TokenKind::RParen) {
+        while (true) {
+            if (t[i].kind != TokenKind::Ident) return false;
+            ++i;
+            if (i >= t.size()) return false;
+            if (t[i].kind == TokenKind::Comma) { ++i; continue; }
+            break;
+        }
+    }
+    if (t[i].kind != TokenKind::RParen) return false;
+    ++i;
+    return i < t.size() && t[i].kind == TokenKind::Assign;
+}
+
 int main() {
     std::map<std::string, double> vars;
+    FuncMap funcs;
     g_vars = &vars;
 
 #ifdef HAVE_READLINE
@@ -260,6 +282,20 @@ int main() {
             continue;
         }
 
+        if (line == "funcs") {
+            if (funcs.empty()) {
+                std::cout << "(no user functions)\n";
+            } else {
+                for (const auto& [name, fn] : funcs) {
+                    std::cout << "  " << name << "(";
+                    for (std::size_t i = 0; i < fn.params.size(); ++i)
+                        std::cout << (i ? ", " : "") << fn.params[i];
+                    std::cout << ")\n";
+                }
+            }
+            continue;
+        }
+
         if (line == "clear") {
             history.clear();
             std::cout << "history cleared\n";
@@ -272,11 +308,11 @@ int main() {
             auto b = name.find_last_not_of(" \t");
             name = (a == std::string::npos) ? "" : name.substr(a, b - a + 1);
             if (name.empty())
-                std::cerr << "usage: unset <variable>\n";
-            else if (vars.erase(name))
+                std::cerr << "usage: unset <name>\n";
+            else if (vars.erase(name) || funcs.erase(name))
                 std::cout << "unset " << name << '\n';
             else
-                std::cerr << "no variable '" << name << "'\n";
+                std::cerr << "no variable or function '" << name << "'\n";
             continue;
         }
 
@@ -289,7 +325,14 @@ int main() {
 
         try {
             auto tokens = Lexer(expr).tokenize();
-            double result = Parser(std::move(tokens), ans, vars).parse();
+            if (displayBase == 0 && looksLikeFuncDef(tokens)) {
+                std::string fname = tokens[0].name;
+                Parser::defineFunction(std::move(tokens), funcs);
+                std::cout << "defined " << fname << "\n";
+                history.emplace_back(line, 0.0);
+                continue;
+            }
+            double result = Parser(std::move(tokens), ans, vars, funcs).parse();
             std::string formatted = (displayBase != 0)
                 ? fmtBase(result, displayBase)
                 : fmtNum(result);

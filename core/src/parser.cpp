@@ -13,8 +13,59 @@ static std::int64_t toInt(double v, const char* fn, std::size_t col) {
     return static_cast<std::int64_t>(v);
 }
 
-Parser::Parser(std::vector<Token> tokens, double ans, std::map<std::string, double>& vars)
-    : m_tokens(std::move(tokens)), m_ans(ans), m_vars(vars) {}
+Parser::Parser(std::vector<Token> tokens, double ans,
+               std::map<std::string, double>& vars,
+               FuncMap& funcs,
+               int depth)
+    : m_tokens(std::move(tokens)), m_ans(ans), m_vars(vars), m_funcs(funcs), m_depth(depth) {}
+
+Parser::DefineResult Parser::defineFunction(std::vector<Token> tokens, FuncMap& funcs) {
+    if (tokens.size() < 6) throw CalcError("invalid function definition", 0);
+    if (tokens[0].kind != TokenKind::Ident || tokens[1].kind != TokenKind::LParen)
+        throw CalcError("invalid function definition", tokens[0].col);
+    const std::string name = tokens[0].name;
+    if (RESERVED.count(name))
+        throw CalcError("cannot define function with reserved name '" + name + "'", tokens[0].col);
+
+    std::vector<std::string> params;
+    std::size_t i = 2;
+    if (tokens[i].kind != TokenKind::RParen) {
+        while (true) {
+            if (tokens[i].kind != TokenKind::Ident)
+                throw CalcError("expected parameter name", tokens[i].col);
+            params.push_back(tokens[i].name);
+            ++i;
+            if (tokens[i].kind == TokenKind::Comma) { ++i; continue; }
+            break;
+        }
+    }
+    if (tokens[i].kind != TokenKind::RParen)
+        throw CalcError("expected ')' in parameter list", tokens[i].col);
+    ++i;
+    if (tokens[i].kind != TokenKind::Assign)
+        throw CalcError("expected '=' in function definition", tokens[i].col);
+    ++i;
+    if (tokens[i].kind == TokenKind::End)
+        throw CalcError("function body is empty", tokens[i].col);
+
+    std::vector<Token> body(tokens.begin() + static_cast<std::ptrdiff_t>(i), tokens.end());
+    funcs[name] = UserFunc{std::move(params), std::move(body)};
+    return DefineResult::Defined;
+}
+
+double Parser::callUserFunc(const UserFunc& fn, const std::string& name,
+                            const std::vector<double>& args, std::size_t col) {
+    if (args.size() != fn.params.size())
+        throw CalcError(name + ": expected " + std::to_string(fn.params.size())
+                        + " argument(s), got " + std::to_string(args.size()), col);
+    if (m_depth + 1 > MAX_DEPTH)
+        throw CalcError("recursion depth limit reached calling '" + name + "'", col);
+    std::map<std::string, double> locals = m_vars;
+    for (std::size_t i = 0; i < fn.params.size(); ++i)
+        locals[fn.params[i]] = args[i];
+    Parser sub(fn.body, m_ans, locals, m_funcs, m_depth + 1);
+    return sub.parseExpr();
+}
 
 double Parser::parse() {
     if (m_tokens.size() >= 3 &&
@@ -147,6 +198,22 @@ double Parser::parsePrimary() {
 double Parser::parseCall(const std::string& name, std::size_t nameCol) {
     std::size_t callCol = nameCol;
     advance();
+
+    auto fit = m_funcs.find(name);
+    if (fit != m_funcs.end()) {
+        std::vector<double> args;
+        if (current().kind != TokenKind::RParen) {
+            args.push_back(parseExpr());
+            while (current().kind == TokenKind::Comma) {
+                advance();
+                args.push_back(parseExpr());
+            }
+        }
+        if (current().kind != TokenKind::RParen) errHere("expected ')'");
+        advance();
+        return callUserFunc(fit->second, name, args, callCol);
+    }
+
     double a = parseExpr();
 
     if (current().kind == TokenKind::Comma) {
