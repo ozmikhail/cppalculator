@@ -7,6 +7,7 @@
 struct UserFunc {
     std::vector<std::string> params;
     std::vector<Token> body;
+    std::string source;
 };
 
 using FuncMap = std::map<std::string, UserFunc>;
@@ -22,7 +23,7 @@ public:
     static constexpr int MAX_DEPTH = 256;
 
     enum class DefineResult { Defined };
-    static DefineResult defineFunction(std::vector<Token> tokens, FuncMap& funcs);
+    static DefineResult defineFunction(std::vector<Token> tokens, std::string source, FuncMap& funcs);
 
 private:
     std::vector<Token> m_tokens;

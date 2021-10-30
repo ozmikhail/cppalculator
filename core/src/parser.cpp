@@ -19,7 +19,7 @@ Parser::Parser(std::vector<Token> tokens, double ans,
                int depth)
     : m_tokens(std::move(tokens)), m_ans(ans), m_vars(vars), m_funcs(funcs), m_depth(depth) {}
 
-Parser::DefineResult Parser::defineFunction(std::vector<Token> tokens, FuncMap& funcs) {
+Parser::DefineResult Parser::defineFunction(std::vector<Token> tokens, std::string source, FuncMap& funcs) {
     if (tokens.size() < 6) throw CalcError("invalid function definition", 0);
     if (tokens[0].kind != TokenKind::Ident || tokens[1].kind != TokenKind::LParen)
         throw CalcError("invalid function definition", tokens[0].col);
@@ -49,7 +49,7 @@ Parser::DefineResult Parser::defineFunction(std::vector<Token> tokens, FuncMap& 
         throw CalcError("function body is empty", tokens[i].col);
 
     std::vector<Token> body(tokens.begin() + static_cast<std::ptrdiff_t>(i), tokens.end());
-    funcs[name] = UserFunc{std::move(params), std::move(body)};
+    funcs[name] = UserFunc{std::move(params), std::move(body), std::move(source)};
     return DefineResult::Defined;
 }
 

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -21,7 +22,7 @@
 static const std::vector<std::string> COMPLETIONS = {
     // REPL commands
     "quit", "exit", "history", "vars", "funcs", "units", "unset", "clear", "help",
-    "hex", "bin", "oct",
+    "hex", "bin", "oct", "save", "load",
     // constants
     "pi", "e", "tau", "inf", "ans",
     // 1-arg functions
@@ -115,7 +116,9 @@ static void printHelp() {
         "  vars               list user-defined variables\n"
         "  funcs              list user-defined functions\n"
         "  units              list built-in unit constants\n"
-        "  unset <name>       remove a user variable\n"
+        "  unset <name>       remove a user variable or function\n"
+        "  save <file>        write all variables and functions to file\n"
+        "  load <file>        evaluate every line of file (variables, functions, etc.)\n"
         "  hex <expr>         evaluate and print result in hexadecimal\n"
         "  bin <expr>         evaluate and print result in binary\n"
         "  oct <expr>         evaluate and print result in octal\n"
@@ -302,6 +305,56 @@ int main() {
             continue;
         }
 
+        auto trimmedArg = [](const std::string& s) {
+            auto a = s.find_first_not_of(" \t");
+            auto b = s.find_last_not_of(" \t");
+            return (a == std::string::npos) ? std::string{} : s.substr(a, b - a + 1);
+        };
+
+        if (line.rfind("save ", 0) == 0) {
+            std::string path = trimmedArg(line.substr(5));
+            if (path.empty()) { std::cerr << "usage: save <file>\n"; continue; }
+            std::ofstream out(path);
+            if (!out) { std::cerr << "cannot open '" << path << "' for writing\n"; continue; }
+            for (const auto& [name, val] : vars)
+                out << name << " = " << fmtNum(val) << '\n';
+            for (const auto& [name, fn] : funcs)
+                out << fn.source << '\n';
+            std::cout << "saved " << vars.size() << " variable(s) and "
+                      << funcs.size() << " function(s) to " << path << '\n';
+            continue;
+        }
+
+        if (line.rfind("load ", 0) == 0) {
+            std::string path = trimmedArg(line.substr(5));
+            if (path.empty()) { std::cerr << "usage: load <file>\n"; continue; }
+            std::ifstream in(path);
+            if (!in) { std::cerr << "cannot open '" << path << "'\n"; continue; }
+            std::string fline;
+            std::size_t loaded = 0, errors = 0;
+            while (std::getline(in, fline)) {
+                auto trimStart = fline.find_first_not_of(" \t");
+                if (trimStart == std::string::npos) continue;
+                if (fline[trimStart] == '#') continue;
+                try {
+                    auto tokens = Lexer(fline).tokenize();
+                    if (looksLikeFuncDef(tokens)) {
+                        Parser::defineFunction(std::move(tokens), fline, funcs);
+                    } else {
+                        ans = Parser(std::move(tokens), ans, vars, funcs).parse();
+                    }
+                    ++loaded;
+                } catch (const std::exception& ex) {
+                    std::cerr << "  " << path << ": " << ex.what() << " (line: " << fline << ")\n";
+                    ++errors;
+                }
+            }
+            std::cout << "loaded " << loaded << " line(s) from " << path;
+            if (errors) std::cout << " (" << errors << " error(s))";
+            std::cout << '\n';
+            continue;
+        }
+
         if (line.rfind("unset ", 0) == 0) {
             std::string name = line.substr(6);
             auto a = name.find_first_not_of(" \t");
@@ -327,7 +380,7 @@ int main() {
             auto tokens = Lexer(expr).tokenize();
             if (displayBase == 0 && looksLikeFuncDef(tokens)) {
                 std::string fname = tokens[0].name;
-                Parser::defineFunction(std::move(tokens), funcs);
+                Parser::defineFunction(std::move(tokens), line, funcs);
                 std::cout << "defined " << fname << "\n";
                 history.emplace_back(line, 0.0);
                 continue;
